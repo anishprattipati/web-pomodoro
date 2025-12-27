@@ -42,6 +42,29 @@ function createAlarmPlayer() {
 const alarm = createAlarmPlayer()
 
 export default function App() {
+  // theme: 'dark' | 'light'
+  const [theme, setTheme] = useState(() => typeof window !== 'undefined' ? (localStorage.getItem('pomodoro-theme') || 'dark') : 'dark')
+  // background choice: none | nature | city | mountains | gradient
+  const [bgChoice, setBgChoice] = useState(() => typeof window !== 'undefined' ? (localStorage.getItem('pomodoro-bg') || 'none') : 'none')
+
+  // Apply theme & background to document element
+  useEffect(()=>{
+    try{
+      if(typeof document !== 'undefined'){
+        document.documentElement.setAttribute('data-theme', theme)
+        localStorage.setItem('pomodoro-theme', theme)
+        // map bgChoice to image URL or gradient
+        let img = 'none'
+        if (bgChoice === 'nature') img = `linear-gradient(rgba(6,12,15,0.45), rgba(6,12,15,0.45)), url("https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&s=1")`
+        else if (bgChoice === 'city') img = `linear-gradient(rgba(2,6,12,0.55), rgba(2,6,12,0.55)), url("https://images.unsplash.com/photo-1508057198894-247b23fe5ade?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&s=1")`
+        else if (bgChoice === 'mountains') img = `linear-gradient(rgba(6,10,12,0.35), rgba(6,10,12,0.35)), url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&s=1")`
+        else if (bgChoice === 'gradient') img = `linear-gradient(135deg, rgba(35, 118, 186, 0.18), rgba(255,140,66,0.16))`
+        else img = 'none'
+        document.documentElement.style.setProperty('--bg-image', img)
+        localStorage.setItem('pomodoro-bg', bgChoice)
+      }
+    }catch(e){}
+  },[theme,bgChoice])
   // session: 'focus' | 'short' | 'long'
   const [session, setSession] = useState('focus')
   const [completedFocus, setCompletedFocus] = useState(0)
@@ -295,43 +318,56 @@ export default function App() {
   const currentCycle = roundsCompletedInCycle + 1
   const sessionsUntilLong = CYCLES_BEFORE_LONG - roundsCompletedInCycle
 
-  // Choose color per session
-  const bgColor = session === 'focus' ? '#f7f3e9' : session === 'short' ? '#eaf7ef' : '#e9f0fb'
-  const accent = session === 'focus' ? '#ef6c00' : session === 'short' ? '#2e7d32' : '#1565c0'
+  // Choose color per session (darker accents for visibility on dark background)
+  const bgColor = 'var(--page-bg)'
+  const accent = session === 'focus' ? 'var(--accent-focus)' : session === 'short' ? 'var(--accent-short)' : 'var(--accent-long)'
+
+  // Build background style based on selection
+  const bgStyle = {}
+  if (bgChoice === 'nature') bgStyle.backgroundImage = `linear-gradient(rgba(6,12,15,0.45), rgba(6,12,15,0.45)), url("https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&s=1")`
+  else if (bgChoice === 'city') bgStyle.backgroundImage = `linear-gradient(rgba(20,20,40,0.5), rgba(20,20,40,0.5)), url("https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&s=1")`
+  else if (bgChoice === 'mountains') bgStyle.backgroundImage = `linear-gradient(rgba(6,10,12,0.35), rgba(6,10,12,0.35)), url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&s=1")`
+  else if (bgChoice === 'gradient') bgStyle.backgroundImage = `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`
+  else bgStyle.backgroundImage = 'none'
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:bgColor,padding:24}} onClick={()=>{ if(endedBanner) stopTitleFlash() }}>
-      <div style={{width:480,maxWidth:'100%',textAlign:'center',background:'white',borderRadius:12,padding:20,boxShadow:'0 8px 30px rgba(0,0,0,0.08)'}}>
+    <>
+      <div style={{position:'fixed',top:0,left:0,width:'100%',height:'100%',...bgStyle,backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat',backgroundAttachment:'fixed',zIndex:-1}} id="bg-layer"></div>
+      <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:bgChoice==='none'?'var(--page-bg)':'transparent',padding:24}} onClick={()=>{ if(endedBanner) stopTitleFlash() }}>
+      <div style={{width:480,maxWidth:'100%',textAlign:'center',background:'var(--card-bg)',borderRadius:12,padding:20,boxShadow:'0 8px 30px rgba(0,0,0,0.6)'}}>
         {endedBanner ? (
-          <div style={{background:'#fff3f0',border:'1px solid #ffcfc6',padding:8,borderRadius:8,color:'#b22',marginBottom:10,fontWeight:600}}>Session ended — click anywhere to dismiss or press Start to continue</div>
+          <div className="ended-banner">Session ended — click anywhere to dismiss or press Start to continue</div>
         ) : null}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
           <div style={{color:accent,fontWeight:700,letterSpacing:0.6}}>
             {session === 'focus' ? 'Focus' : session === 'short' ? 'Short Break' : 'Long Break'}
           </div>
-          <div style={{fontSize:12,color:'#666'}}>Cycle {currentCycle} of {CYCLES_BEFORE_LONG}</div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{fontSize:12,color:'var(--muted)'}}>Cycle {currentCycle} of {CYCLES_BEFORE_LONG}</div>
+            <button onClick={()=>setTheme(t=>t==='dark'?'light':'dark')} style={{padding:'6px 8px',borderRadius:8,border:'1px solid var(--input-border)',background:'transparent',color:'var(--text)'}} title="Toggle theme">{theme==='dark'?'🌙':'☀️'}</button>
+          </div>
         </div>
 
         <div style={{fontSize:72,fontVariantNumeric:'tabular-nums',margin:'12px 0'}}>{minutes}:{seconds}</div>
 
         <div style={{display:'flex',gap:12,justifyContent:'center',alignItems:'center',marginBottom:12}}>
-          <button onClick={toggleRunning} style={{padding:'10px 18px',borderRadius:8,border:'none',background:accent,color:'white',fontWeight:600}}>
+          <button onClick={toggleRunning} style={{padding:'10px 18px',borderRadius:8,border:'none',background:accent,color:'#071017',fontWeight:700}}>
             {running ? 'Pause' : (hasStarted ? 'Continue' : 'Start')}
           </button>
 
-          <button onClick={() => { setMuted((m)=>!m) }} aria-pressed={muted} style={{padding:'10px 12px',borderRadius:8,border:'1px solid #ddd',background:'white'}} title={muted ? 'Unmute' : 'Mute'}>
+          <button onClick={() => { setMuted((m)=>!m) }} aria-pressed={muted} style={{padding:'10px 12px',borderRadius:8,border:'1px solid var(--input-border)',background:'transparent',color:'var(--text)'}} title={muted ? 'Unmute' : 'Mute'}>
             {muted ? '🔇' : '🔔'}
           </button>
 
           {session !== 'focus' ? (
-            <button onClick={skipSession} style={{padding:'10px 12px',borderRadius:8,border:'1px solid #999',background:'white'}}>
+            <button onClick={skipSession} style={{padding:'10px 12px',borderRadius:8,border:'1px solid var(--input-border)',background:'transparent',color:'var(--text)'}}>
               Skip
             </button>
           ) : null}
         </div>
 
         <div style={{display:'flex',gap:12,justifyContent:'center',alignItems:'center',marginBottom:12}}>
-          <div style={{fontSize:13,color:'#444'}}>Focus sessions until long break: {sessionsUntilLong}</div>
+          <div style={{fontSize:13,color:'var(--muted)'}}>Focus sessions until long break: {sessionsUntilLong}</div>
         </div>
 
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginTop:8,alignItems:'center'}}>
@@ -347,9 +383,24 @@ export default function App() {
         </div>
 
         <div style={{marginTop:12,textAlign:'left'}}>
+          <div style={{fontSize:13,fontWeight:600,marginBottom:6}}>Appearance</div>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
+            <label style={{fontSize:13,color:'var(--muted)',minWidth:90}}>Background</label>
+            <select value={bgChoice} onChange={(e)=>setBgChoice(e.target.value)} style={{padding:8,background:'var(--input-bg)',border:'1px solid var(--input-border)',color:'var(--text)'}}>
+              <option value="none">None</option>
+              <option value="nature">Nature (soft)</option>
+              <option value="city">City (night)</option>
+              <option value="mountains">Mountains</option>
+              <option value="gradient">Subtle gradient</option>
+            </select>
+            <button onClick={()=>{ setBgChoice('none') }} style={{padding:'8px 10px',marginLeft:6}}>Clear</button>
+          </div>
+        </div>
+
+        <div style={{marginTop:12,textAlign:'left'}}>
           <div style={{fontSize:13,fontWeight:600,marginBottom:6}}>Background Audio (drag & drop an MP3)</div>
-          <div onDrop={onDrop} onDragOver={onDragOver} style={{border:'1px dashed #ddd',borderRadius:8,padding:12,minHeight:56,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
-            <div style={{color:'#555'}}>Drop an audio file here to play as background (will loop)</div>
+          <div onDrop={onDrop} onDragOver={onDragOver} style={{border:'1px dashed var(--input-border)',borderRadius:8,padding:12,minHeight:56,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+            <div style={{color:'var(--muted)'}}>Drop an audio file here to play as background (will loop)</div>
             <div style={{display:'flex',gap:8}}>
               {bgAudioUrl ? <button onClick={clearBgAudio} style={{padding:'6px 10px'}}>Clear</button> : null}
             </div>
@@ -357,15 +408,15 @@ export default function App() {
           {bgAudioUrl ? (
             <audio ref={bgAudioRef} src={bgAudioUrl} controls loop style={{width:'100%',marginTop:8}} />
           ) : (
-            <div style={{fontSize:12,color:'#888',marginTop:8}}>No background audio loaded.</div>
+            <div style={{fontSize:12,color:'var(--muted)',marginTop:8}}>No background audio loaded.</div>
           )}
         </div>
 
         <div style={{marginTop:12,textAlign:'left'}}>
           <div style={{fontSize:13,fontWeight:600,marginBottom:6}}>YouTube background (optional)</div>
           <div style={{display:'flex',gap:8}}>
-            <input placeholder="https://youtube.com/watch?v=..." value={ytUrl} onChange={(e)=>setYtUrl(e.target.value)} style={{flex:1,padding:8}} />
-            <button onClick={loadYt} style={{padding:'8px 12px'}}>Load</button>
+            <input placeholder="https://youtube.com/watch?v=..." value={ytUrl} onChange={(e)=>setYtUrl(e.target.value)} style={{flex:1,padding:8,background:'var(--input-bg)',border:'1px solid var(--input-border)',color:'var(--text)'}} />
+            <button onClick={loadYt} style={{padding:'8px 12px',background:'transparent',border:'1px solid var(--input-border)',color:'var(--text)'}}>Load</button>
           </div>
           {ytId ? (
             <div style={{marginTop:8}}>
@@ -377,13 +428,14 @@ export default function App() {
           ) : null}
         </div>
 
-        <div style={{height:8,background:'#f0f0f0',borderRadius:6,overflow:'hidden',marginTop:18}}>
+        <div style={{height:8,background:'#071018',borderRadius:6,overflow:'hidden',marginTop:18}}>
           <div style={{height:'100%',width:`${Math.min(100, Math.round(((CYCLES_BEFORE_LONG - sessionsUntilLong) / CYCLES_BEFORE_LONG) * 100))}%`,background:accent}} />
         </div>
 
-        <div style={{marginTop:12,fontSize:12,color:'#888'}}>Minimal Pomodoro — timestamp-driven for accuracy. Drag an MP3 to play background loop.</div>
+        <div style={{marginTop:12,fontSize:12,color:'var(--muted)'}}>Minimal Pomodoro — timestamp-driven for accuracy. Drag an MP3 to play background loop.</div>
 
       </div>
-    </div>
+      </div>
+    </>
   )
 }

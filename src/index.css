@@ -1,23 +1,66 @@
-/* Minimal, clean styles for Pomodoro */
-html,body,#root{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial}
+/* Dark theme styles for Pomodoro */
+html,body,#root{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial;color:var(--text)}
 button{cursor:pointer}
+
+:root{--bg-image:none}
+
+/* Dark theme variables */
+[data-theme="dark"]{
+  --page-bg:#0b0b0b;
+  --card-bg:rgba(15,23,32,0.9);
+  --muted:#9aa9b2;
+  --text:#e6eef8;
+  --input-bg:#07101a;
+  --input-border:#22303a;
+  --accent-focus:#ff8c42;
+  --accent-short:#4caf50;
+  --accent-long:#42a5f5;
+}
+
+/* Light theme variables */
+[data-theme="light"]{
+  --page-bg:#f7f7f9;
+  --card-bg:rgba(255,255,255,0.95);
+  --muted:#6b7280;
+  --text:#0b1220;
+  --input-bg:#ffffff;
+  --input-border:#e6e9ee;
+  --accent-focus:#ef6c00;
+  --accent-short:#2e7d32;
+  --accent-long:#1565c0;
+}
 
 .drop-zone {
 	border-radius:8px;
 	padding:12px;
-	border:1px dashed #ddd;
+	border:1px dashed var(--input-border);
+	background:transparent;
+	color:var(--muted);
 }
 
 .drop-zone.dragover {
-	background:#fafafa;
+	background:rgba(255,255,255,0.02);
 }
 
 .ended-banner {
-	background: #fff3f0;
-	border: 1px solid #ffcfc6;
-	padding: 8px;
-	border-radius: 8px;
-	color: #b22;
-	margin-bottom: 10px;
-	font-weight: 600;
+	background:#3b0f0f;
+	border:1px solid #7b1f1f;
+	padding:8px;
+	border-radius:8px;
+	color:#ffd7d0;
+	margin-bottom:10px;
+	font-weight:600;
 }
+
+input, textarea, select {
+	background:var(--input-bg);
+	color:var(--text);
+	border:1px solid var(--input-border);
+	border-radius:6px;
+}
+
+input::placeholder, textarea::placeholder {
+	color: #6f8792;
+}
+
+audio { filter: none }
